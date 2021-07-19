@@ -1,2 +1,2 @@
 # encode
-Playing with cryptography, stenography, and other encoding tools.
+Playing with cryptography, steganography, and other encoding tools.
