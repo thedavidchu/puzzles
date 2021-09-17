@@ -10,7 +10,7 @@ VISIBLE_MASK_CONST = int(BIT_SHIFT * '1' + (8 - BIT_SHIFT) * '0', 2)
 def combine_visible_and_hidden(
         visible_image_path: str,
         hidden_image_path: str,
-        stenograph_image_path: str,
+        steganograph_image_path: str,
 ):
     # Open input images and resize visible to hidden size
     visible_image = cv2.imread(visible_image_path)
@@ -24,20 +24,20 @@ def combine_visible_and_hidden(
     # Hide hidden image on the lower 3 bits
     visible_image &= VISIBLE_MASK_CONST
     hidden_image >>= BIT_SHIFT
-    stenograph = visible_image + hidden_image
+    steganograph = visible_image + hidden_image
 
     # Save in lossless format
-    pre, ext = os.path.splitext(stenograph_image_path)
-    cv2.imwrite(pre + '.png', stenograph)
+    pre, ext = os.path.splitext(steganograph_image_path)
+    cv2.imwrite(pre + '.png', steganograph)
 
 
 def extract_hidden_image(
-        stenograph_image_path,
+        steganograph_image_path,
         hidden_image_path
 ):
-    # Open stenograph and shift; save it to hidden path
-    stenograph_image = cv2.imread(stenograph_image_path)
-    hidden_image = (stenograph_image << BIT_SHIFT)
+    # Open steganograph and shift; save it to hidden path
+    steganograph_image = cv2.imread(steganograph_image_path)
+    hidden_image = (steganograph_image << BIT_SHIFT)
     cv2.imwrite(hidden_image_path, hidden_image)
 
     # Save in lossless format
@@ -49,6 +49,6 @@ if __name__ == '__main__':
     # Deployment Decoding Pipeline
     deployment_decoding_pipeline = True
     if deployment_decoding_pipeline:
-        stenograph_image_path = input('Where is the encoded file?')
+        steganograph_image_path = input('Where is the encoded file?')
         result_image_path = input('Where do you want to save the hidden message?')
-        extract_hidden_image(stenograph_image_path, result_image_path)
+        extract_hidden_image(steganograph_image_path, result_image_path)
