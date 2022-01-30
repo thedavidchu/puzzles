@@ -6,6 +6,9 @@ import numpy as np
 
 
 def guess_word(text_words: List[str], word_length: int):
+    if not text_words:
+        raise ValueError("No more words to choose from!")
+    
     # Step 3: Process words (convert to lowercase), convert to number from 0..=25)
     def word_to_int_seq(word: str) -> Tuple[int, ...]:
         assert word.isalpha()
