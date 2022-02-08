@@ -157,21 +157,35 @@ def test(num: int = None):
     with open(DICTIONARY_PATH) as f:
         all_text_words = f.read().split("\n")
     
-    test_words_list = (
+    test_words_set = set(
         all_text_words 
         if num is None
         else random.sample(all_text_words, k=num)
     )
-    num_words = len(test_words_list)
+    num_words = len(test_words_set)
 
     # Compute Score
     score = 0
     total_guesses = 0
-    for i, key_word in enumerate(test_words_list):
-        r = test_key_word(key_word)
-        if r:
+
+    while test_words_set:
+        key_word = test_words_set.pop()
+        num_guesses, guesses = test_key_word(key_word)
+
+        # NOTE: Potential optimization is to do `test_words_set - set(guesses)`, but the statistics are likely not going to easily reflect this
+        # We can't just update the statistics unless we can guarantee that the order of words we guessed is the same as we would have guessed had
+        # the keyword been different
+        # The following assumes determinism of the order we guess
+        for i, guess in guesses:
+            if guess in test_words_set:
+                score += 1
+                total_guesses += i + 1
+        test_words_set = test_words_set - set(guesses)
+
+        # Update score of main word
+        if num_guesses < 7:
             score += 1
-            total_guesses += r
+            total_guesses += num_guesses
         else:
             total_guesses += NUM_GUESSES
 
@@ -192,9 +206,11 @@ def test_key_word(key_word: str) -> int:
     text_words = filtered_text_words    # Reset every iteration
     pattern = [{l for l in "abcdefghijklmnopqrstuvwxyz"} for _ in range(WORD_LENGTH)]
     required = ""
+    guesses = []
     for i in range(NUM_GUESSES):
         # Step 4: Guess most likely word
         most_likely_word = guess_word(text_words, WORD_LENGTH, explore=(i < NUM_GUESSES - 1))
+        guesses.append(most_likely_word)
         print(f"\tGuess: {most_likely_word}")
         reply = test_word(key_word, most_likely_word)
         if "-" not in reply and "~" not in reply:
@@ -204,9 +220,9 @@ def test_key_word(key_word: str) -> int:
         text_words = apply_filter(text_words, pattern, required)
     else:
         print(f"YOU FAILED ON {key_word}!")
-        return 0
+        return i + 1, guesses
     print("SUCCESS!")
-    return i + 1
+    return i + 1, guesses
 
 
 ################################################################################
