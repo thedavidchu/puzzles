@@ -43,19 +43,20 @@ def guess_word(text_words: List[str], word_length: int):
 
 def update_pattern(old_pattern: List[Set[str]], old_required: str, guess: str, reply: str):
     """
-    Note: we apply the filter every time, so we don't need to check for the old pattern/old requirements
+    Note: we apply the filter every time, so we don't need to check for the old pattern/old requirements.
+
 
     old_pattern: list[set[str]]
         The possible characters for each position in the word. E.g. [{"a", "b"}, {"c", "d", "e"}]
     old_required: str
         A string of characters that are required to be present in the string.
     guess: str
-        The latest guess. E.g. "hello"
+        The latest guess. E.g. "hello".
     reply: str
-        The reply stating the 
+        The reply stating the status of each character.
     """
     new_pattern = old_pattern
-    new_required = old_required
+    new_required = ""
     for i, position in enumerate(old_pattern):
         # Correct letter, correct position
         if reply[i] == "+":
@@ -66,13 +67,24 @@ def update_pattern(old_pattern: List[Set[str]], old_required: str, guess: str, r
             new_required += guess[i]
         # Wrong letter, wrong position
         elif reply[i] == "-":
-            new_pattern = [
-                p - {guess[i]} for p in new_pattern
-            ]
+            # Not duplicate letter
+            if guess[i] not in new_required:
+                new_pattern = [
+                    p - {guess[i]} for p in new_pattern
+                ]
+            else:
+                new_patter[i] -= {guess[i]}
         else:
             raise ValueError("unexpected value in reply")
+    # Combine old_required and new_required
+    if old_required:
+        for i, char in enumerate(old_required):
+            num_in_old = old_required.count(char)
+            num_in_new = new_required.count(char)
+            if num_in_old > num_in_new:
+                new_required += char * (num_in_old - num_in_new)
     return new_pattern, new_required
-            
+
 
 def apply_filter(words: List[str], pattern: List[Set[str]], required: str):
     re_pattern = f"[{']['.join(''.join(p) for p in pattern)}]"
@@ -80,7 +92,7 @@ def apply_filter(words: List[str], pattern: List[Set[str]], required: str):
     # Remove words that don't fit the pattern
     words: iter = filter(r.match, words)
     # Remove words without the required letters
-    words: list = [w for w in words if all(req in w for req in required)]
+    words: list = [w for w in words if all(w.count(req) == required.count(req) for req in required)]
     return words
 
 
@@ -92,9 +104,10 @@ def test_word(key: str, guess: str):
 
     reply_list = []
     for i, char in enumerate(guess):
-        if key[i] == guess[i]:
+        if key[i] == char:
             reply_list.append("+")
-        elif guess[i] in key:
+        # If 
+        elif char in key and guess[:i+1].count(char) <= key.count(char):
             reply_list.append("~")
         else:
             reply_list.append("-")
