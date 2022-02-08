@@ -12,35 +12,45 @@ WORD_LENGTH: int = 5
 NUM_GUESSES: int = 6
 
 
-def guess_word(text_words: List[str], word_length: int):
+def guess_word(text_words: List[str], word_length: int, explore: bool):
     if not text_words:
         raise ValueError("No more words to choose from!")
     
-    # Step 3: Process words (convert to lowercase), convert to number from 0..=25)
+    # Step 1: Process words (convert to lowercase), convert to number from 0..=25)
     def word_to_int_seq(word: str) -> Tuple[int, ...]:
         assert word.isalpha()
         return tuple(ord(l) - ord("a") for l in word.lower())
 
     words = np.array([word_to_int_seq(word) for word in text_words])
+    num_words = len(words)
 
-    # Step 4: Find the frequency of each letter appearing in each position
+    # Step 2: Find the frequency of each letter appearing in each position
     hist = np.zeros((26, word_length))
     for j, col in enumerate(words.T):
         hist[:, j], _ = np.histogram(col, 26, (0, 26))
 
-    # Step 5: Find the probability of each letter appearing in its place
+    # Step 3: Find the probability of each letter appearing in its place
     # NOTE: the "probability" should be normalized by dividing by the number of words
     prob_letters = np.zeros_like(words)
     for j, col in enumerate(words.T):
         prob_letters[:, j] = np.take(hist[:, j], col)
+    prob_letters = np.log(prob_letters / num_words)
 
-    # Step 6: Find the probability of each word
+    # Step 4: Find the probability of each word
     prob_words = np.sum(prob_letters, axis=1)
-
-    # Step 7: Find the most likely word
+    
+    # Step 5: If explore, do not guess duplicates. Else, pick the best
+    if explore:
+        max_prob = np.max(prob_words)
+        all_unique = np.array(tuple(map(lambda word: len(np.unique(word)) == word_length, words)))
+        prob_words = np.where(
+            all_unique,
+            prob_words,
+            prob_words + max_prob
+        )
+    # Step b: Find the most likely word
     def int_seq_to_word(seq: Tuple[int, ...]) -> str:
         return "".join(chr(s + ord("a")) for s in seq)
-
 
     most_likely_idx = np.argmax(prob_words)
     most_likely_word = int_seq_to_word(words[most_likely_idx])
@@ -184,7 +194,7 @@ def test_key_word(key_word: str) -> int:
     required = ""
     for i in range(NUM_GUESSES):
         # Step 4: Guess most likely word
-        most_likely_word = guess_word(text_words, WORD_LENGTH)
+        most_likely_word = guess_word(text_words, WORD_LENGTH, explore=(i < NUM_GUESSES - 1))
         print(f"\tGuess: {most_likely_word}")
         reply = test_word(key_word, most_likely_word)
         if "-" not in reply and "~" not in reply:
@@ -216,7 +226,7 @@ def main():
     required = ""
     for i in range(NUM_GUESSES):
         # Step 4: Guess most likely word
-        most_likely_word = guess_word(text_words, WORD_LENGTH)
+        most_likely_word = guess_word(text_words, WORD_LENGTH, explore=(i < NUM_GUESSES - 1))
         print(f"Guess {i + 1}: {most_likely_word}")
         
         reply = input("What is the reply? (Type 'help' for instructions): ")
@@ -246,6 +256,6 @@ def main():
 
 if __name__ == "__main__":
     # main()
-    test(50)
-    test_key_word("woosh")
+    # test(50)
+    test_key_word("gazer")
     r = input("PRESS ANY KEY TO CONTINUE")
