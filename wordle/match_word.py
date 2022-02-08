@@ -1,8 +1,15 @@
 #!/bin/python3
+
+import random
 import re
-from typing import List, Set, Tuple
+from typing import Dict, List, Set, Tuple
 
 import numpy as np
+
+
+DICTIONARY_PATH: str = "words_length_5.txt"
+WORD_LENGTH: int = 5
+NUM_GUESSES: int = 6
 
 
 def guess_word(text_words: List[str], word_length: int):
@@ -13,7 +20,6 @@ def guess_word(text_words: List[str], word_length: int):
     def word_to_int_seq(word: str) -> Tuple[int, ...]:
         assert word.isalpha()
         return tuple(ord(l) - ord("a") for l in word.lower())
-
 
     words = np.array([word_to_int_seq(word) for word in text_words])
 
@@ -43,36 +49,51 @@ def guess_word(text_words: List[str], word_length: int):
 
 def update_pattern(old_pattern: List[Set[str]], old_required: str, guess: str, reply: str):
     """
-    Note: we apply the filter every time, so we don't need to check for the old pattern/old requirements
+    Note: we apply the filter every time, so we don't need to check for the old pattern/old requirements.
+
 
     old_pattern: list[set[str]]
         The possible characters for each position in the word. E.g. [{"a", "b"}, {"c", "d", "e"}]
     old_required: str
         A string of characters that are required to be present in the string.
     guess: str
-        The latest guess. E.g. "hello"
+        The latest guess. E.g. "hello".
     reply: str
-        The reply stating the 
+        The reply stating the status of each character.
     """
     new_pattern = old_pattern
-    new_required = old_required
-    for i, position in enumerate(old_pattern):
+    new_required = ""
+    for i, char in enumerate(guess):
         # Correct letter, correct position
         if reply[i] == "+":
-            new_pattern[i] = {guess[i]}
+            new_pattern[i] = {char}
+            new_required += char
         # Correct letter, wrong position
         elif reply[i] == "~":
-            new_pattern[i] -= {guess[i]}
-            new_required += guess[i]
+            new_pattern[i] -= {char}
+            new_required += char
         # Wrong letter, wrong position
         elif reply[i] == "-":
-            new_pattern = [
-                p - {guess[i]} for p in new_pattern
-            ]
+            # Not duplicate letter
+            if char not in new_required:
+                new_pattern = [
+                    p - {char} for p in new_pattern
+                ]
+            # Duplicate letter
+            else:
+                new_pattern[i] -= {char}
         else:
             raise ValueError("unexpected value in reply")
+
+    # Combine old_required and new_required
+    if old_required:
+        for i, char in enumerate(old_required):
+            num_in_old = old_required.count(char)
+            num_in_new = new_required.count(char)
+            if num_in_old > num_in_new:
+                new_required += char * (num_in_old - num_in_new)
     return new_pattern, new_required
-            
+
 
 def apply_filter(words: List[str], pattern: List[Set[str]], required: str):
     re_pattern = f"[{']['.join(''.join(p) for p in pattern)}]"
@@ -80,7 +101,7 @@ def apply_filter(words: List[str], pattern: List[Set[str]], required: str):
     # Remove words that don't fit the pattern
     words: iter = filter(r.match, words)
     # Remove words without the required letters
-    words: list = [w for w in words if all(req in w for req in required)]
+    words: list = [w for w in words if all(w.count(req) >= required.count(req) for req in required)]
     return words
 
 
@@ -90,27 +111,70 @@ def test_word(key: str, guess: str):
     elif len(key) != len(guess):
         raise ValueError("invalid lengths, key and guess are different lengths")
 
-    reply_list = []
+    def create_multiset(key: str) -> Dict[str, int]:
+        return {c: key.count(c) for c in key}
+
+    reply_list = [None] * WORD_LENGTH
+    multiset = create_multiset(key)
     for i, char in enumerate(guess):
-        if key[i] == guess[i]:
-            reply_list.append("+")
-        elif guess[i] in key:
-            reply_list.append("~")
+        if key[i] == char:
+            reply_list[i] = "+"
+            multiset[char] -= 1
+    
+    for i, char in enumerate(guess):
+        if reply_list[i] is not None:
+            continue
+        # If the char is in the key and we are expecting 1 or more of it
+        # NOTE: the dict lookup is valid bc the first statement will short-circuit
+        # if it is false.
+        elif char in key and multiset[char]:
+            reply_list[i] = "~"
+            multiset[char] -= 1
         else:
-            reply_list.append("-")
+            reply_list[i] = "-"
+
+    if not all(map(lambda count: count >= 0, multiset.values())):
+        raise ValueError("too many of one character have been used")
 
     return "".join(reply_list)
 
 
-def test():
-    KEY_WORD = "knoll"
-    DICTIONARY_PATH = "words_length_5.txt"
-    WORD_LENGTH = 5
+################################################################################
+
+
+def test(num: int = None):
+    # Load key words
+    with open(DICTIONARY_PATH) as f:
+        all_text_words = f.read().split("\n")
     
+    test_words_list = (
+        all_text_words 
+        if num is None
+        else random.sample(all_text_words, k=num)
+    )
+    num_words = len(test_words_list)
+
+    # Compute Score
+    score = 0
+    total_guesses = 0
+    for i, key_word in enumerate(test_words_list):
+        r = test_key_word(key_word)
+        if r:
+            score += 1
+            total_guesses += r
+        else:
+            total_guesses += NUM_GUESSES
+
+    print(f"Score: {score}/{num_words} = {score / num_words if num_words else None}")
+    print(f"Total Guesses: {total_guesses}/{num_words * NUM_GUESSES} = {total_guesses / (num_words * NUM_GUESSES) if num_words and NUM_GUESSES else None}")
+
+
+def test_key_word(key_word: str) -> int:
     # Step 1: Load words (separated by "\n")
     with open(DICTIONARY_PATH) as f:
         all_text_words = f.read().split("\n")
 
+    print(f"Word: {key_word}")
     # Step 2: Major Filters (length, ascii)
     filtered_text_words = [word for word in all_text_words if len(word) == WORD_LENGTH and word.isalpha()]
 
@@ -118,27 +182,27 @@ def test():
     text_words = filtered_text_words    # Reset every iteration
     pattern = [{l for l in "abcdefghijklmnopqrstuvwxyz"} for _ in range(WORD_LENGTH)]
     required = ""
-    for i in range(6):
+    for i in range(NUM_GUESSES):
         # Step 4: Guess most likely word
         most_likely_word = guess_word(text_words, WORD_LENGTH)
         print(f"\tGuess: {most_likely_word}")
-        reply = test_word(KEY_WORD, most_likely_word)
+        reply = test_word(key_word, most_likely_word)
         if "-" not in reply and "~" not in reply:
             break
         # Step 5: Filter words based on reply and repeat
         pattern, required = update_pattern(pattern, required, most_likely_word, reply)
         text_words = apply_filter(text_words, pattern, required)
     else:
-        print(f"YOU FAILED ON {KEY_WORD}!")
-        return False
+        print(f"YOU FAILED ON {key_word}!")
+        return 0
     print("SUCCESS!")
-    return True
+    return i + 1
+
+
+################################################################################
 
 
 def main():
-    DICTIONARY_PATH = "words_length_5.txt"
-    WORD_LENGTH = 5
-
     # Step 1: Load words (separated by "\n")
     with open(DICTIONARY_PATH) as f:
         all_text_words = f.read().split("\n")
@@ -150,7 +214,7 @@ def main():
     text_words = filtered_text_words    # Reset every iteration
     pattern = [{l for l in "abcdefghijklmnopqrstuvwxyz"} for _ in range(WORD_LENGTH)]
     required = ""
-    for i in range(6):
+    for i in range(NUM_GUESSES):
         # Step 4: Guess most likely word
         most_likely_word = guess_word(text_words, WORD_LENGTH)
         print(f"Guess {i + 1}: {most_likely_word}")
@@ -174,13 +238,14 @@ def main():
         pattern, required = update_pattern(pattern, required, most_likely_word, reply)
         text_words = apply_filter(text_words, pattern, required)
     else:
-        print(f"YOU FAILED ON {KEY_WORD}!")
+        print(f"YOU FAILED ON MYSTERY WORD!")
         return False
     print("SUCCESS!")
     return True
     
 
-
 if __name__ == "__main__":
-    main()
+    # main()
+    test(50)
+    test_key_word("woosh")
     r = input("PRESS ANY KEY TO CONTINUE")
