@@ -16,6 +16,9 @@ The list of words is from https://github.com/dwyl/english-words/blob/master/word
 ## Notes
 1. It does not get every word in the dictionary in 6 guesses.
 2. A possible improvement would be to add a penalty for guessing duplicate letters.
+  * UPDATE: I added a massive, unreasonably large penalty, but I am still working on this change. An important note is that currently, I "punish" duplicate answers equally hard, which is silly.
+    * E.g. "sassy" should be penalized for a triple 's' more strongly than "sanes" is for a double 's'.
+    * E.g. "abuzz" should be penalized for a double 'z' more strongly than "sanes" is for a double 's'.
 3. I have never played Wordle, rather I am just guessing what the rules are based on what my colleague (June Cai) told me. Specifically, I do not know how duplicate letters in the wrong position are dealt with.
   * E.g. Key word is "knoll"
     * Guess: "level". Is the reply "\~---+"?
@@ -27,3 +30,78 @@ The list of words is from https://github.com/dwyl/english-words/blob/master/word
   * UPDATE: This may not be optimal for all scenarios. There is a trade-off between trying to guess the word in as few tries as possible ("greedy" or "exploitative") and trying to ensure that one does not need more than 6 guesses ("epsilon" or "exploratory").
 6. I selected an arbitrary dictionary. This was not selected for any reason besides it being one of the first hits on Google. Wordle may full well use a different dictionary. I think this dictionary also includes plurals, so who knows?
 7. I sum the unnormalized probabilities rather than multiplying them. This means that I do not use the probability. Also, because I used fixed-width integers (due to the NumPy array), you can get overflow. Maybe I should use the log-probability.
+  * UPDATE: This is fixed.
+
+## Solution Explanations
+
+### Independent Probability Solver
+
+This is the current implementation of the solver.
+
+1. We generate a dictionary of possible 5-letter words
+2. We find the probability of each of the 26 letters being in each of the 5 positions.
+3. We select the word that has the greatest probability of each of its letters being in a given position.
+  * This assumes that the probability of each letter being in a position is independent. Obviously it is not, because we have more common 2-letter combinations (e.g. "ee" is more common than "xq")
+4. We use the feedback to remove the impossible words. (NOTE: this is mechanical and can be done perfectly assuming we have no mistakes).
+
+### Information Entropy Solver
+
+These are just some cursory notes on how I would go about solving this using information entropy. I do not guarantee correctness of this discussion; I have been using "information entropy" as a buzzword until now, so I will stop using this term in favour of _information gain_, in otherwords, how many options we have eliminated. That is, we wish to eliminate as many words as possible. I believe this solution will be much more computationally intensive than the previous.
+
+An open question is whether the locally optimal solution (i.e. the guess that will eliminate the most words in the next round) the globally optimal solution (i.e. the branch of the decision tree it leads us down is has _both_ the fewest average steps to each leaf and the ). In other words, is the problem solveable with a greedy solver?
+
+For every guess, we should calculate the gain from the guess and the opportunity cost. The gain is the number of possibilities that we can eliminate. This gives a computationally infeasible, but certainly correct solution (assuming the greedy solution is the globally optimal solution-- i.e. optimal substructure).
+
+
+```
+let num_guesses: int = 6
+let dictionary: set = all_candidate_words
+
+for i in num_guesses:
+  for key_word in dictionary:
+    # This is a 'constraint' solver-- we are solving for what is possible rather than what is likely
+    # We could construct a Bayesian probability solver by keeping track of the probability that each word is the key_word and factoring that into the decision
+    # This would also be an iterative solver, making the problem even more immense
+    let new_dictionary: dict[str -> set] = {word: set() for word in dictionary}
+
+    # '-' denotes the difference of two sets
+    for guess_word in dictionary - {key_word}:
+      # |= is the union-equals operator. (a |= b) <=> (a = a UNION b)
+      new_dictionary[guess_word] |= filter_out_impossible_words(answer=key_word, guess=word)
+
+  pick_the_guess_word_with_smallest_number_of_possible_words(new_dictionary)
+
+
+```
+
+```
+let num_guesses: int = 6
+let dictionary: set = all_candidate_words
+
+for i in num_guesses:
+  for key_word in dictionary:
+    # This is a 'constraint' solver-- we are solving for what is possible rather than what is likely
+    # We could construct a Bayesian probability solver by keeping track of the probability that each word is the key_word and factoring that into the decision
+    # This would also be an iterative solver, making the problem even more immense
+    let new_dictionary: dict[str -> dict[str -> int]] = 0
+
+    # '-' denotes the difference of two sets
+    for guess_word in dictionary - {key_word}:
+      # |= is the union-equals operator. (a |= b) <=> (a = a UNION b)
+      possible_words = filter_out_impossible_words(answer=key_word, guess=word)
+      for word in possible_words:
+        new_dictionary[guess_word][word] += 1
+
+  pick_the_guess_word_with_smallest_number_of_possible_words(new_dictionary)
+
+
+```
+
+As you can see, this algorithm is already `O(N^3)` (the `filter_out_impossible_words()` function is at least `O(N)`)! And this assumes the greedy solution is correct. Think about the crazy amount of compute this requires.
+
+An example of the information we gain from a guess, "sanes" tells use that:
+1. There is 0, 1, or >2 's'
+2. There is 0 or >1 'a'
+3. There is 0 or >1 'n'
+4. There is 0 or >1 'e'
+5. Whether there is an 's', 'a', 'n', 'e', and 's' in their relative positions
