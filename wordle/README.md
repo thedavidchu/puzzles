@@ -54,10 +54,10 @@ An open question is whether the locally optimal solution (i.e. the guess that wi
 
 For every guess, we should calculate the gain from the guess and the opportunity cost. The gain is the number of possibilities that we can eliminate. This gives a computationally infeasible, but certainly correct solution (assuming the greedy solution is the globally optimal solution-- i.e. optimal substructure).
 
-I thought that I showed optimal substructure between guesses too. However, I have heard of people creating solvers that look ahead. Maybe I made a mistake in my reasoning. I have not made a "formal proof" because I'm not a mathematical genius. But here is an outline:
+I thought that I showed optimal substructure between guesses too. However, I have heard of people creating solvers that look more than one step ahead (i.e. ThreeBlueOneBrown. I watched his video on 2022 Februrary 11). Maybe I made a mistake in my reasoning. I have not made a "formal proof" because I'm not a mathematical genius. But here is an outline:
 
 > Let _dictionary_ be the original set of words.
-> Let _wordA(\*)_ be the new set of possible words after filtering the words
+> Let _wordA(\*)_ be the new set of possible words after filtering out the words
 > in \* that do not fit with the information we learned from guessing _wordA_.
 
 > We will show the commutative property between guesses.
@@ -86,6 +86,7 @@ I thought that I showed optimal substructure between guesses too. However, I hav
 > I apologize to my many talented mathematics teachers/professors for creating
 > such a vague, hand-wavy, and likely holey proof. Also I apologize for abuses of notation.
 
+Below is a version of the pseudocode where we create a 2D mapping from words to the set of words that will be allowed after that word is guessed. This only needs to be computed once if one can learn nothing more from the guess after applying the filter of information acquired from making that guess. These are O(N^3) to computer and O(N^2) to store.
 ```
 let num_guesses: int = 6
 let dictionary: set = all_candidate_words
@@ -103,31 +104,6 @@ for i in num_guesses:
       new_dictionary[guess_word] |= filter_out_impossible_words(answer=key_word, guess=word)
 
   pick_the_guess_word_with_smallest_number_of_possible_words(new_dictionary)
-
-
-```
-
-```
-let num_guesses: int = 6
-let dictionary: set = all_candidate_words
-
-for i in num_guesses:
-  for key_word in dictionary:
-    # This is a 'constraint' solver-- we are solving for what is possible rather than what is likely
-    # We could construct a Bayesian probability solver by keeping track of the probability that each word is the key_word and factoring that into the decision
-    # This would also be an iterative solver, making the problem even more immense
-    let new_dictionary: dict[str -> dict[str -> int]] = 0
-
-    # '-' denotes the difference of two sets
-    for guess_word in dictionary - {key_word}:
-      # |= is the union-equals operator. (a |= b) <=> (a = a UNION b)
-      possible_words = filter_out_impossible_words(answer=key_word, guess=word)
-      for word in possible_words:
-        new_dictionary[guess_word][word] += 1
-
-  pick_the_guess_word_with_smallest_number_of_possible_words(new_dictionary)
-
-
 ```
 
 As you can see, this algorithm is already `O(N^3)` (the `filter_out_impossible_words()` function is at least `O(N)`)! And this assumes the greedy solution is correct. Think about the crazy amount of compute this requires.
@@ -138,3 +114,7 @@ An example of the information we gain from a guess, "sanes" tells use that:
 3. There is 0 or >1 'n'
 4. There is 0 or >1 'e'
 5. Whether there is an 's', 'a', 'n', 'e', and 's' in their relative positions
+
+**Note on ThreeBlueOneBrown's solution**: I think that his solver that uses the softmax function to filter out "unlikely" words is unfair (i.e. it doesn't solve it without intimate knowledge of how the game works). This is essentially a hand-wavy way of reproducing the smaller set of words that Wordle uses for its answers. It is also an inelegant, parameter-tuning-nightmare-inducing solution. It clearly works in practice, but I disagree with its use.
+
+**Note on eliminating guess words (degenerate cases)**: Imagine the words, "bound", "found", "hound", "mound", "pound", "round", "sound", "wound". There are more of these words than the six guesses one gets. This means that one cannot pick the "greedy" solution with respect to probability (key: with respect to probability. I thought this disproved my optimal substructure, but it doesn't because I assume greedy with respect to eliminating the most). This _does_ show the limitations of the maximimum-probability heuristic solution (i.e. picking the most "probable" word). But obviously, to eliminate the most words, one would have to eliminate the first letters of these words multiples at a time (e.g. pick a word with as many of the first letters as possible). This is not immediately obvious.
