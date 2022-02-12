@@ -11,7 +11,7 @@ This project requires Python 3 (tested on Python 3.8) and NumPy. Please ensure y
 
 ## Licensing
 
-The list of words is from https://github.com/dwyl/english-words/blob/master/words_alpha.txt, using the Unlicense as of 2022 Janurary 28.
+The list of words is from [this link](https://github.com/dwyl/english-words/blob/master/words_alpha.txt) using the Unlicense as of 2022 Janurary 28.
 
 ## Notes
 1. It does not get every word in the dictionary in 6 guesses.
@@ -19,22 +19,24 @@ The list of words is from https://github.com/dwyl/english-words/blob/master/word
   * UPDATE: I added a massive, unreasonably large penalty, but I am still working on this change. An important note is that currently, I "punish" duplicate answers equally hard, which is silly.
     * E.g. "sassy" should be penalized for a triple 's' more strongly than "sanes" is for a double 's'.
     * E.g. "abuzz" should be penalized for a double 'z' more strongly than "sanes" is for a double 's'.
-3. I have never played Wordle, rather I am just guessing what the rules are based on what my colleague (June Cai) told me. Specifically, I do not know how duplicate letters in the wrong position are dealt with.
-  * E.g. Key word is "knoll"
-    * Guess: "level". Is the reply "\~---+"?
-    * Guess: "lilly". Is the reply "\~-\~+-" or "\~--+-"
-      * (i.e. only 1 of the L's in the wrong place is marked as belonging in the word)?
-      * Note that I defaulted to the former for ease of implementation.
+3. ~I have never played Wordle, rather I am just guessing what the rules are based on what my colleague (June Cai) told me. Specifically, I do not know how duplicate letters in the wrong position are dealt with.~
+  * ~E.g. Key word is "knoll"~
+    * ~Guess: "level". Is the reply "\~---+"?~
+    * ~Guess: "lilly". Is the reply "\~-\~+-" or "\~--+-"~
+      * ~(i.e. only 1 of the L's in the wrong place is marked as belonging in the word)?~
+      * ~Note that I defaulted to the former for ease of implementation.~
       * UPDATE: I looked it up and according to [this blog post](https://nerdschalk.com/wordle-same-letter-twice-rules-explained-how-does-it-work/), Wordle will mark excess letters as non-members (i.e. '-')
 4. This game would be best solved by a decision tree using information entropy (I believe). I am not smart enough to that, so I have created this heuristic solver. Yay! (Just kidding, I wrote one in ROB311 but it was really hard and I don't want to think that hard again).
   * UPDATE: This may not be optimal for all scenarios. There is a trade-off between trying to guess the word in as few tries as possible ("greedy" or "exploitative") and trying to ensure that one does not need more than 6 guesses ("epsilon" or "exploratory").
 6. I selected an arbitrary dictionary. This was not selected for any reason besides it being one of the first hits on Google. Wordle may full well use a different dictionary. I think this dictionary also includes plurals, so who knows?
-7. I sum the unnormalized probabilities rather than multiplying them. This means that I do not use the probability. Also, because I used fixed-width integers (due to the NumPy array), you can get overflow. Maybe I should use the log-probability.
+7. ~I sum the unnormalized probabilities rather than multiplying them. This means that I do not use the probability. Also, because I used fixed-width integers (due to the NumPy array), you can get overflow. Maybe I should use the log-probability.~
   * UPDATE: This is fixed.
 
 ## Solution Explanations
 
-### Independent Probability Solver
+### Heuristic Solutions
+
+#### Independent Letter Probability Solver
 
 This is the current implementation of the solver.
 
@@ -52,6 +54,37 @@ An open question is whether the locally optimal solution (i.e. the guess that wi
 
 For every guess, we should calculate the gain from the guess and the opportunity cost. The gain is the number of possibilities that we can eliminate. This gives a computationally infeasible, but certainly correct solution (assuming the greedy solution is the globally optimal solution-- i.e. optimal substructure).
 
+I thought that I showed optimal substructure between guesses too. However, I have heard of people creating solvers that look ahead. Maybe I made a mistake in my reasoning. I have not made a "formal proof" because I'm not a mathematical genius. But here is an outline:
+
+> Let _dictionary_ be the original set of words.
+> Let _wordA(\*)_ be the new set of possible words after filtering the words
+> in \* that do not fit with the information we learned from guessing _wordA_.
+
+> We will show the commutative property between guesses.
+> Say that _wordA_ and then _wordB_ are two different words belonging to _dictionary_.
+> The sets _wordA(wordB(dictionary))_ and _wordB(wordA(dictionary))_ are equal
+> because they are equal to _wordA(dictionary)_ INTERSECTION _wordB(dictionary)_ 
+> (**insert hand waving here**). 
+
+> <=> the hint you get after guessing a word can be discarded after applying
+> that filter to the set (all members fit this; none fits it 'more' than any other).
+
+> => the state we end up in from guessing _wordA_ and then _wordB_ is 
+> the same state as when we guess _wordB_ and then _wordA_.
+
+> <=> the order of guesses is commutative. QED (well not really)
+
+> Now, we will "prove" optimal substructure. Say _wordA(wordB(dictionary))_
+> is the optimal solution. Therefore, if we choose _wordB_ first, we want to show
+> that _wordA_ would be the best second choice. Now, assume toward a contraction that
+> there exists a solution, _wordB(wordX(dictionary))_, which is a better choice,
+> where _wordX_ =/= _wordA_. Now, using the commuative property, we rearrange it as
+> _wordX(wordB(dictionary))_. And hence _wordX_ =/= _wordA_, and yet _wordA_ is any
+> arbitrary word that will yield the optimal solution. This is a contradiction,
+> hence we have optimal substructure.
+
+> I apologize to my many talented mathematics teachers/professors for creating
+> such a vague, hand-wavy, and likely holey proof. Also I apologize for abuses of notation.
 
 ```
 let num_guesses: int = 6
