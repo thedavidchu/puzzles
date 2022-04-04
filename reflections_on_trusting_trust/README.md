@@ -5,19 +5,21 @@ I decided to take a crack at creating a program that self-replicates its source
 code.
 
 Two key observations allowed me to do this:
-1. printf's format is not applied recursively.
+1. `printf`'s format is not applied recursively.
     * E.g. `printf("%s", "%s");` will print `%s`.
-2. printf allows one to easily duplicate strings in the stdout.
+2. `printf` allows one to easily duplicate strings in the `stdout`.
     * E.g. `printf("%s%s", string, string);` will print `string` twice.
 
 The file `trojan.c` is more of a proof-of-concept rather than anything of
-value, especially considering it only prints to the stdout. But it was an
-interesting exercise. Also, similarly to Thompson's example file, `trojan.c` is
-not strictly speaking self-replicating.
+value, especially considering it only prints to the standard output; rather, it
+was an interesting exercise. Also, similarly to Thompson's example file,
+`trojan.c` is not, strictly-speaking, self-replicating. However, it does self-
+replicate its functionality.
 
-The file `trojan.c` has pretty formatting (i.e. indentation) that I did not
-want to recreate the self-replicating functionality for. But `real_trojan.c` is
-the output from `trojan.c` and is truly self-replicating.
+The reason is that the file `trojan.c` has pretty formatting (i.e. indentation),
+for which I did not want to recreate the self-replicating functionality. But the
+output from `trojan.c`, located in the file `real_trojan.c`, is truly
+self-replicating.
 
 To check for whether a C file is self-replicating, run the following script:
 
@@ -34,5 +36,5 @@ gcc resultA.c
 cmp resultA.c resultB.c
 ```
 
-There should be no `stdout` output from the `cmp` function. This denotes
+There should be no standard output from the `cmp` function. This denotes
 success.
