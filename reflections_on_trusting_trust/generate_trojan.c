@@ -1,3 +1,10 @@
+/** This file generates a self-replicating C program and prints its source code
+to the standard output. The self-replicating program has the same functionality
+as this file, but is devoid of indentation, new lines, and comments.
+
+The essence of this file is that we are trying to replicate the special and
+escape characters (e.g. '\\', '\n', '\"') so that we can both print them when
+required, but also print their escaped version. */
 #include <stdio.h>
 
 int main() {
