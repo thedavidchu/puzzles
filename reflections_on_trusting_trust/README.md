@@ -10,22 +10,22 @@ Two key observations allowed me to do this:
 2. `printf` allows one to easily duplicate strings in the `stdout`.
     * E.g. `printf("%s%s", string, string);` will print `string` twice.
 
-The file `trojan.c` is more of a proof-of-concept rather than anything of
-value, especially considering it only prints to the standard output; rather, it
-was an interesting exercise. Also, similarly to Thompson's example file,
-`trojan.c` is not, strictly-speaking, self-replicating. However, it does self-
-replicate its functionality.
+The file `generate_trojan.c` is more of a proof-of-concept rather than anything
+of value, especially considering it only prints to the standard output; rather,
+it was an interesting exercise. Also, similarly to Thompson's example file,
+`generate_trojan.c` is not, strictly-speaking, self-replicating. However, it
+does self-replicate its functionality.
 
-The reason is that the file `trojan.c` has pretty formatting (i.e. indentation),
-for which I did not want to recreate the self-replicating functionality. But the
-output from `trojan.c`, located in the file `real_trojan.c`, is truly
-self-replicating.
+The reason is that the file `generate_trojan.c` has pretty formatting (i.e.
+indentation, new lines, and comments), for which I did not want to recreate the
+self-replicating functionality. But the output from `generate_trojan.c`, located
+in the file `trojan.c`, is truly self-replicating.
 
 To check for whether a C file is self-replicating, run the following script:
 
 ```bash
 # Compile and run the first file
-gcc real_trojan.c
+gcc trojan.c
 ./a.out > resultA.c
 
 # Compile and run the output file
