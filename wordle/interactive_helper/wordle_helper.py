@@ -62,7 +62,7 @@ def green(idx: int, c: str):
     global GREEN, ANS
     assert isinstance(idx, int) and 0 <= idx <= 4
     assert isinstance(c, str) and len(c) == 1 and c.isalpha()
-    assert GREEN[idx] == None
+    assert GREEN[idx] is None
 
     GREEN[idx] = c
     ANS = [w for w in ANS if w[idx] == c] 
