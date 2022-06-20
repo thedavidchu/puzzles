@@ -66,4 +66,4 @@ def green(idx: int, c: str):
 
 
 if __name__ == "__main__":
-    ANS = get_five_letter_words()
+    ANS = reset()
