@@ -35,6 +35,7 @@ def reset():
 
 
 def grey(s: str):
+    """Mark a string of (zero or more) letters as grey."""
     global GREY, ANS
     assert isinstance(s, str) and 0 < len(s) 
 
@@ -43,18 +44,21 @@ def grey(s: str):
     return ANS
 
 
-def yellow(idx: int, c: str):
+def yellow(idx: int, s: str):
+    """Mark a string of (zero or more) letters as yellow in a given position."""
     global YELLOW_EXCLUDE, YELLOW_REQUIRED, ANS
     assert isinstance(idx, int) and 0 <= idx <= 4
-    assert isinstance(c, str) and len(c) == 1 and c.isalpha()
+    assert isinstance(s, str) and s.isalpha()
 
-    YELLOW_EXCLUDE[idx].append(c.lower())
-    YELLOW_REQUIRED.update(c)
-    ANS = [w for w in ANS if w[idx] != c and c in w]
+    for c in s:
+        YELLOW_EXCLUDE[idx].append(c.lower())
+        YELLOW_REQUIRED.update(c)
+        ANS = [w for w in ANS if w[idx] != c and c in w]
     return ANS
 
 
 def green(idx: int, c: str):
+    """Mark a single character as green in a given position."""
     global GREEN, ANS
     assert isinstance(idx, int) and 0 <= idx <= 4
     assert isinstance(c, str) and len(c) == 1 and c.isalpha()
