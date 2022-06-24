@@ -1,7 +1,29 @@
 # Puzzles
 Playing with cryptography, steganography (stenography is the short-hand), and other encoding tools.
 
-## Wordle
+## steganography
+
+I take my visible image:
+
+```bash
+# in this current directory
+python steganography \
+    --visible-path .images/Forests.jpg \
+    --hidden-path .images/wildfire_768_60.jpg \
+    --steganograph-path .images/steganograph.png; # note: it has to be a png so the lesser-significant pixels do not get messed up.
+```
+
+![Serene Forest](https://github.com/thedavidchu/puzzles/blob/main/.images/Forests.jpg?raw=true)
+
+and hide this image in the lesser-visible bits of the pixels:
+
+![Forest Fire](https://github.com/thedavidchu/puzzles/blob/main/.images/wildfire_768_60.jpg?raw=true)
+
+to get:
+
+![Steganograph](https://github.com/thedavidchu/puzzles/blob/main/.images/steganograph.png?raw=true)
+
+## wordle
 
 The interactive Wordle assistant uses human input and returns possible output words.
 
