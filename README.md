@@ -3,7 +3,7 @@ Playing with cryptography, steganography (stenography is the short-hand), and ot
 
 ## steganography
 
-I take my visible image:
+I use this script:
 
 ```bash
 # in this current directory
@@ -12,6 +12,8 @@ python steganography \
     --hidden-path .images/wildfire_768_60.jpg \
     --steganograph-path .images/steganograph.png; # note: it has to be a png so the lesser-significant pixels do not get messed up.
 ```
+
+to take my outwardly visible image:
 
 ![Serene Forest](https://github.com/thedavidchu/puzzles/blob/main/.images/Forests.jpg?raw=true)
 
@@ -22,6 +24,8 @@ and hide this image in the lesser-visible bits of the pixels:
 to get:
 
 ![Steganograph](https://github.com/thedavidchu/puzzles/blob/main/.images/steganograph.png?raw=true)
+
+Note the drop in quality, because the lower pixels are used to disguise the hidden image.
 
 ## wordle
 
