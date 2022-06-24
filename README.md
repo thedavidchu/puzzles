@@ -37,7 +37,7 @@ The output of the interactive Wordle assistant:
 
 ![Wordle state after two guesses](https://github.com/thedavidchu/puzzles/blob/main/.images/wordlesolver-guess2-2022-06-23.png?raw=true)
 
+
 ## TODO
-- Upload pretty pictures of the steganography
 - Show the self-replicating source code in a demo
 
