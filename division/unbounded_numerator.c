@@ -9,14 +9,14 @@
  *
  * Created for my application as an ESC180 2023/CSC190 2024 TA.
  *
- * Requires C99 or higher! This is because we print size_t.
- * 
+ * Requires C99 or higher! This is because we print size_t and we use stdbool.h.
+ *
  * NOTE: I do not support negative numbers. The file must only contain the
  * characters 0 to 9. A blank file will evaluate to 0.
  */
 
-#include <stdbool.h>
 #include <assert.h>
+#include <stdbool.h>
 #include <stdio.h>
 
 #define FILE_NAME "file.txt"
@@ -26,6 +26,8 @@ int main() {
     int is_zero = true;
     size_t remainder = 0;
     const size_t divisor = 190;
+
+    assert(divisor > 0 && "only positive divisors are supported!");
 
     /* Open file */
     FILE *fp = fopen(FILE_NAME, "r");
@@ -40,15 +42,15 @@ int main() {
             remainder -= quotient * divisor;
             printf("%zu", quotient);
             is_zero = false;
+        } else if (is_zero) {
+            /* Skip leading zeros from being displayed */
+            continue;
         } else {
-            if (is_zero) {
-                /* Skip leading zeros from being displayed. This could be an
-                 * else-if clause, but I feel this is clearer. */
-                continue;
-            }
             printf("0");
         }
     }
+    /* Print 0 if nothing has been printed yet - this will print 0 if the
+     * numerator is less than the divisor or we have a blank file input. */
     if (is_zero) {
         printf("0");
     }
@@ -56,6 +58,6 @@ int main() {
 
     /* Close file */
     err = fclose(fp);
-    assert(!err && "error closing");
+    assert(!err && "error closing!");
     return 0;
 }
