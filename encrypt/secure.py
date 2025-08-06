@@ -9,8 +9,6 @@ It can:
 - Decrypt: decrypt with RSA private key, decompress with gzip
 """
 
-from __future__ import annotations
-
 import argparse
 import base64
 import binascii
